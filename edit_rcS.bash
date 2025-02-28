@@ -12,14 +12,17 @@ function get_vm_host_ip {
     fi
 
     # Original VM host IP: returns IPv6 address (fdc4:f303:9324::254), unsuppored by mavlink server
+    # See also https://github.com/JonasVautherin/px4-gazebo-headless/issues/54
+    # See https://github.com/docker/for-mac/issues/7332
     # echo "$(getent hosts host.docker.internal | awk '{ print $1 }')"
 
-    # This generates an IPv4 address (192.168.65.254) which points to the host machine (Macbook) instead of the px4-client Docker container
+    # This generates an IPv4 address (192.168.65.254) which points to the host machine (Macbook)
     echo "$(dig host.docker.internal +short)"
 }
 
 function get_px4_client_ip {
     # Generates an IPv4 address (172.19.0.1) which points to the px4-client Docker container    
+    # TODO investigate more robust networking options: if px4-client container restarts, the IP will change, requiring this simulator to obtain the new IP and restart the mavsdk server
     echo "$(dig px4-client +short)"
 }
 
@@ -43,8 +46,8 @@ fi
 
 CONFIG_FILE=${FIRMWARE_DIR}/build/etc/init.d-posix/px4-rc.mavlink
 
-echo "Final API_PARAM: ${API_PARAM}"
-echo "Final QGC_PARAM: ${QGC_PARAM}"
+echo "MAVSDK access from ${API_PARAM}"
+echo "QGroundControl access from ${QGC_PARAM}"
 
 sed -i "s/mavlink start \-x \-u \$udp_gcs_port_local -r 4000000/mavlink start -x -u \$udp_gcs_port_local -r 4000000 ${QGC_PARAM}/" ${CONFIG_FILE}
 sed -i "s/mavlink start \-x \-u \$udp_offboard_port_local -r 4000000/mavlink start -x -u \$udp_offboard_port_local -r 4000000 ${API_PARAM}/" ${CONFIG_FILE}
