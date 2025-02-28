@@ -1,12 +1,12 @@
 FROM ubuntu:24.04
 
-ENV WORKSPACE_DIR /root
-ENV FIRMWARE_DIR ${WORKSPACE_DIR}/px4
-ENV SITL_RTSP_PROXY ${WORKSPACE_DIR}/sitl_rtsp_proxy
+ENV WORKSPACE_DIR=/root
+ENV FIRMWARE_DIR=${WORKSPACE_DIR}/px4
+ENV SITL_RTSP_PROXY=${WORKSPACE_DIR}/sitl_rtsp_proxy
 
 ENV DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
-ENV DISPLAY :99
-ENV LANG C.UTF-8
+ENV DISPLAY=:99
+ENV LANG=C.UTF-8
 
 RUN apt-get update && \
     apt-get install -y \
@@ -28,6 +28,13 @@ RUN apt-get update && \
                        python3-jsonschema \
                        python3-kconfiglib \
                        python3-yaml \
+                       # dig
+                       dnsutils \
+                       # ip
+                       iproute2 \
+                       # ping
+                       iputils-ping \
+                       vim \
                        xvfb
 
 RUN pip3 install --break-system-packages pyros-genmsg
