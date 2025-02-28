@@ -3,6 +3,34 @@
 
 # PX4-Gazebo simulator (headless)
 
+## NODA AI
+
+> [!NOTE]  
+> This repository was forked from https://github.com/JonasVautherin/px4-gazebo-headless, specifically the Ubuntu 24.04 branch.
+> 
+> **[Compare against `add-gz-harmonic` branch of Jonas Vautherin's repo](https://github.com/JonasVautherin/px4-gazebo-headless/compare/add-gz-harmonic...noda-ai:px4-gazebo-headless:master)**
+>
+> The NODA AI edition of this image was built from the `master` branch here, tagged as "latest", and pushed to NODA's ECR registry.
+>
+> To successfully run `docker compose up` from `urza`, you will first need to log in to AWS using the `aws` CLI tool:
+>
+> ```bash
+> aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 381491823703.dkr.ecr.us-east-1.amazonaws.com
+> ```
+>
+> To modify, build, and push a new version of this headless simulator image, make your code changes to this repo, merge and push to `master`, then run the following from the project root:
+> 
+> ```bash
+> # Build new image locally
+> docker build . -t gz-harmonic-headless
+>
+> # Tag with "latest"
+> docker tag gz-harmonic-headless:latest 381491823703.dkr.ecr.us-east-1.amazonaws.com/gz-harmonic-headless:latest
+>
+> # Push to NODA's ECR registry
+> docker push 381491823703.dkr.ecr.us-east-1.amazonaws.com/gz-harmonic-headless:latest
+> ```
+
 ## Quickstart
 
 The Docker images resulting from this repo are available on [Docker Hub](https://hub.docker.com/r/jonasvautherin/px4-gazebo-headless/).
