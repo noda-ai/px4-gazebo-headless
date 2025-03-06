@@ -21,9 +21,10 @@ function get_vm_host_ip {
 }
 
 function get_px4_client_ip {
-    # Generates an IPv4 address (172.19.0.1) which points to the px4-client Docker container    
-    # TODO investigate more robust networking options: if px4-client container restarts, the IP will change, requiring this simulator to obtain the new IP and restart the mavsdk server
-    echo "$(dig px4-client +short)"
+    # Generates an IPv4 address (172.19.0.1) which points to the PX4 client Docker container
+    # TODO investigate more robust networking options: if PX4 client container restarts, the IP will change, requiring this simulator to obtain the new IP and restart the mavsdk server
+    PX4_CLIENT_HOST=${PX4_CLIENT_HOST:-"px4-client"}
+    echo "$(dig $PX4_CLIENT_HOST +short)"
 }
 
 function get_host_ip {
@@ -35,6 +36,7 @@ if is_docker_vm; then
     VM_HOST=$(get_vm_host_ip)
     PX4_CLIENT_HOST=$(get_px4_client_ip)
     echo "VM host IP: ${VM_HOST}"
+    echo "PX4 client IP: ${PX4_CLIENT_HOST}"
     QGC_PARAM=${QGC_PARAM:-"-t ${VM_HOST}"}
     API_PARAM=${API_PARAM:-"-t ${PX4_CLIENT_HOST}"}
 else
