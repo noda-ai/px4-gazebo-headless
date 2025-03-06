@@ -9,8 +9,8 @@ function show_help {
     echo "(i.e. when running e.g. \`make px4_sitl gazebo_iris__baylands\`)"
     echo ""
     echo "  -h    Show this help"
-    echo "  -v    Set the vehicle (default: iris)"
-    echo "  -w    Set the world (default: empty)"
+    echo "  -v    Set the vehicle (default: gz_x500)"
+    echo "  -w    Set the world (default: default)"
     echo ""
     echo "  <HOST_API> is the host or IP to which PX4 will send MAVLink on UDP port 14540"
     echo "  <HOST_QGC> is the host or IP to which PX4 will send MAVLink on UDP port 14550"
@@ -50,19 +50,19 @@ done
 
 shift $((OPTIND-1))
 
-
-if [ "$#" -eq 1 ]; then
-    IP_QGC=$(get_ip "$1")
-elif [ "$#" -eq 2 ]; then
-    IP_API=$(get_ip "$1")
-    IP_QGC=$(get_ip "$2")
-elif [ "$#" -gt 2 ]; then
-    show_help
-    exit 1;
+# Rely on environment variables for offboard API (MAVSDK) IP address, QGroundControl IP address, and PX4 instance ID
+if [ -n "${IP_API}" ]; then
+    IP_API=$(get_ip "${IP_API}")
 fi
+
+if [ -n "${IP_QGC}" ]; then
+    IP_QGC=$(get_ip "${IP_QGC}")
+fi
+
+INSTANCE_NUM=${INSTANCE_NUM:-0}
 
 Xvfb :99 -screen 0 1600x1200x24+32 &
 ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
 
 source ${WORKSPACE_DIR}/edit_rcS.bash ${IP_API} ${IP_QGC} &&
-HEADLESS=1 PX4_SIM_MODEL=${vehicle} PX4_GZ_WORLD=${world} ${FIRMWARE_DIR}/build/bin/px4
+HEADLESS=1 PX4_SIM_MODEL=${vehicle} PX4_GZ_WORLD=${world} ${FIRMWARE_DIR}/build/bin/px4 -i ${INSTANCE_NUM}
