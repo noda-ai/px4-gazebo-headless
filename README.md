@@ -5,7 +5,7 @@
 
 ## NODA AI
 
-> [!NOTE]  
+> [!NOTE]
 > This repository was forked from https://github.com/JonasVautherin/px4-gazebo-headless, specifically the Ubuntu 24.04 branch.
 > 
 > **[Compare against `add-gz-harmonic` branch of Jonas Vautherin's repo](https://github.com/JonasVautherin/px4-gazebo-headless/compare/add-gz-harmonic...noda-ai:px4-gazebo-headless:master)**
@@ -30,6 +30,15 @@
 > # Push to NODA's ECR registry
 > docker push 381491823703.dkr.ecr.us-east-1.amazonaws.com/gz-harmonic-headless:latest
 > ```
+>
+> ## Environment Variables
+>
+> This custom image uses the following environment variables:
+>
+> | Variable | Description | Default Value |
+> | --- | --- | --- |
+> | `NUM_DRONES` | Number of UAVs to spawn in the simulator | 1 |
+> | `PX4_CLIENT_HOST` | Hostname of the machine (or Docker container) of the PX4 API client from which MAVSDK commands will be sent | `px4-client` |
 
 ## Quickstart
 

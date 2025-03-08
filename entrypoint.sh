@@ -59,10 +59,30 @@ if [ -n "${IP_QGC}" ]; then
     IP_QGC=$(get_ip "${IP_QGC}")
 fi
 
-INSTANCE_NUM=${INSTANCE_NUM:-0}
+# Number of drones to spawn in the simulator
+NUM_DRONES=${NUM_DRONES:-1}
 
 Xvfb :99 -screen 0 1600x1200x24+32 &
 ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
 
 source ${WORKSPACE_DIR}/edit_rcS.bash ${IP_API} ${IP_QGC} &&
-HEADLESS=1 PX4_SIM_MODEL=${vehicle} PX4_GZ_WORLD=${world} ${FIRMWARE_DIR}/build/bin/px4 -i ${INSTANCE_NUM}
+
+# Adapted from https://github.com/PX4/PX4-Autopilot/blob/main/Tools/simulation/sitl_multiple_run.sh
+n=0
+while [ $n -lt $NUM_DRONES ]; do
+	working_dir="$PX4_BUILD_DIR/instance_$n"
+	[ ! -d "$working_dir" ] && mkdir -p "$working_dir"
+
+	pushd "$working_dir" &>/dev/null
+	echo "starting instance $n in $(pwd)"
+	# PX4_GZ_MODEL_POSE (x, y, z, roll, pitch, yaw) should be unique for each instance to avoid collisions on initialization
+	HEADLESS=1 PX4_SIM_MODEL=${vehicle} PX4_GZ_WORLD=${world} PX4_GZ_MODEL_POSE="0,$n,0,0,0,0" ${PX4_BUILD_DIR}/bin/px4 -d -i $n &
+	popd &>/dev/null
+
+	sleep 2
+
+	n=$(($n + 1))
+done
+
+# Wait for all PX4 instances to finish
+wait

@@ -2,6 +2,7 @@ FROM ubuntu:24.04
 
 ENV WORKSPACE_DIR=/root
 ENV FIRMWARE_DIR=${WORKSPACE_DIR}/px4
+ENV PX4_BUILD_DIR=${FIRMWARE_DIR}/build
 ENV SITL_RTSP_PROXY=${WORKSPACE_DIR}/sitl_rtsp_proxy
 
 ENV DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
@@ -20,6 +21,7 @@ RUN apt-get update && \
                        gstreamer1.0-plugins-ugly \
                        libgstreamer-plugins-base1.0-dev \
                        libgstrtspserver-1.0-dev \
+                       libopencv-dev \
                        lsb-release \
                        python3-pip \
                        python3-empy \
