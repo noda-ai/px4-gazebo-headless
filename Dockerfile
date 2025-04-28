@@ -11,6 +11,7 @@ ENV LANG=C.UTF-8
 
 RUN apt-get update && \
     apt-get install -y \
+                       bc \
                        cmake \
                        curl \
                        git \
@@ -36,6 +37,8 @@ RUN apt-get update && \
                        iproute2 \
                        # ping
                        iputils-ping \
+                       # tree utility for directory listing
+                       tree \
                        vim \
                        xvfb
 
@@ -63,6 +66,8 @@ RUN cmake --build ${SITL_RTSP_PROXY}/build
 
 RUN cmake -DCONFIG=px4_sitl_default -B${FIRMWARE_DIR}/build -S${FIRMWARE_DIR} && \
     cmake --build ${FIRMWARE_DIR}/build
+
+COPY simulation-worlds ${FIRMWARE_DIR}/Tools/simulation/gz/worlds/custom
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}
 COPY entrypoint.sh /root/entrypoint.sh
