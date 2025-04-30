@@ -62,8 +62,10 @@ fi
 # Number of drones to spawn in the simulator
 NUM_DRONES=${NUM_DRONES:-1}
 
+# Start Xvfb in background
 Xvfb :99 -screen 0 1600x1200x24+32 &
 ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
+
 
 source ${WORKSPACE_DIR}/edit_rcS.bash ${IP_API} ${IP_QGC} &&
 
@@ -80,8 +82,8 @@ while [ $n -lt $NUM_DRONES ]; do
     popd &>/dev/null
         
     # Increased sleep time between subsequent instance launches
-    echo "Sleeping 10 seconds before launching next instance..."
-    sleep 10
+    echo "Sleeping 20 seconds before launching next instance..."
+    sleep 20
     
     n=$(($n + 1))
 done

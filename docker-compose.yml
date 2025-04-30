@@ -1,0 +1,21 @@
+services:
+  px4-sitl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DISPLAY=:99
+      - NUM_DRONES=1
+      - PX4_GZ_WORLD=custom/camp-roberts
+      - IP_API=host.docker.internal  # Mac-friendly IP resolution
+      - IP_QGC=host.docker.internal
+      - PX4_SIM_SPEED_FACTOR=0.9
+      - LOCKSTEP=1 # Ensure lockstep is enabled (should be by default)
+      - PX4_ESTIMATOR=ekf2 # Use EKF2 which is more robust to slight timing issues
+    network_mode: bridge
+    cap_add:
+      - SYS_PTRACE
+    tty: true
+    stdin_open: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix  # Only needed if using native GUI
