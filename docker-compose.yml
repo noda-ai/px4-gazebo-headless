@@ -6,7 +6,7 @@ services:
     environment:
       - DISPLAY=:99
       - NUM_DRONES=1
-      - PX4_GZ_WORLD=custom/reveille-peak-ranch
+      - PX4_GZ_WORLD=custom/port-hueneme
       - IP_API=host.docker.internal  # Mac-friendly IP resolution
       - IP_QGC=host.docker.internal
       - PX4_SIM_SPEED_FACTOR=0.9
