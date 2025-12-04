@@ -8,7 +8,7 @@
 > [!NOTE]
 > This repository was forked from https://github.com/JonasVautherin/px4-gazebo-headless, specifically the Ubuntu 24.04 branch.
 > 
-> **[Compare against `add-gz-harmonic` branch of Jonas Vautherin's repo](https://github.com/JonasVautherin/px4-gazebo-headless/compare/add-gz-harmonic...noda-ai:px4-gazebo-headless:master)**
+> Support for `gz-harmonic` was merged to `master` in https://github.com/JonasVautherin/px4-gazebo-headless/pull/61.
 >
 > The NODA AI edition of this image was built from the `master` branch here, tagged as "latest", and pushed to NODA's ECR registry.
 >

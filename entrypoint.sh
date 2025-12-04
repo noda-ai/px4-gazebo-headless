@@ -32,7 +32,7 @@ function get_ip {
 
 OPTIND=1 # Reset in case getopts has been used previously in the shell.
 
-vehicle=gz_x500
+vehicle=${PX4_GZ_VEHICLE:-gz_x500}
 world=${PX4_GZ_WORLD:-default}
 
 while getopts "h?v:w:" opt; do

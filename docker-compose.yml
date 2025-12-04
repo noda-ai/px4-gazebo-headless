@@ -6,8 +6,9 @@ services:
     environment:
       - DISPLAY=:99
       - NUM_DRONES=1
-      - PX4_GZ_WORLD=custom/port-hueneme
-      - IP_API=host.docker.internal  # Mac-friendly IP resolution
+      - PX4_GZ_WORLD=custom/key-west
+      - PX4_GZ_VEHICLE=gz_rc_cessna # gz_x500 or gz_rc_cessna
+      - IP_API=host.docker.internal # Mac-friendly IP resolution
       - IP_QGC=host.docker.internal
       - PX4_SIM_SPEED_FACTOR=0.9
       - LOCKSTEP=1 # Ensure lockstep is enabled (should be by default)
@@ -18,4 +19,4 @@ services:
     tty: true
     stdin_open: true
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix  # Only needed if using native GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix # Only needed if using native GUI
