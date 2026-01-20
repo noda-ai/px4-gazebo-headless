@@ -69,6 +69,83 @@ ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
 
 source ${WORKSPACE_DIR}/edit_rcS.bash ${IP_API} ${IP_QGC} &&
 
+# Source PX4's Gazebo environment setup (sets up model/plugin paths)
+GZ_ENV_FILE="${FIRMWARE_DIR}/build/rootfs/gz_env.sh"
+if [ -f "$GZ_ENV_FILE" ]; then
+    echo "Sourcing Gazebo environment from: ${GZ_ENV_FILE}"
+    . "$GZ_ENV_FILE"
+else
+    echo "WARNING: gz_env.sh not found at ${GZ_ENV_FILE}, setting paths manually"
+    export PX4_GZ_MODELS=${FIRMWARE_DIR}/Tools/simulation/gz/models
+    export PX4_GZ_WORLDS=${FIRMWARE_DIR}/Tools/simulation/gz/worlds
+    export PX4_GZ_PLUGINS=${FIRMWARE_DIR}/build/src/modules/simulation/gz_plugins
+    export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$PX4_GZ_MODELS:$PX4_GZ_WORLDS
+    export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:$PX4_GZ_PLUGINS
+fi
+
+# Resolve world file path
+world_file="${PX4_GZ_WORLDS}/${world}.sdf"
+
+# Start Gazebo server first (before PX4 instances)
+echo "Starting Gazebo with world: ${world_file}"
+echo "GZ_SIM_RESOURCE_PATH: ${GZ_SIM_RESOURCE_PATH}"
+echo "GZ_SIM_SYSTEM_PLUGIN_PATH: ${GZ_SIM_SYSTEM_PLUGIN_PATH}"
+gz sim --verbose=1 -r -s "${world_file}" &
+GZ_PID=$!
+
+# Wait for Gazebo to be fully ready using PX4's method
+# First wait for any world to appear, then get its name from the topic
+echo "Waiting for Gazebo world to be ready..."
+GZ_STARTUP_TIMEOUT=${GZ_STARTUP_TIMEOUT:-120}
+elapsed=0
+
+# Function to check if scene info service is available
+check_scene_info() {
+    local wname=$1
+    SERVICE_INFO=$(gz service -i --service "/world/${wname}/scene/info" 2>&1)
+    if echo "$SERVICE_INFO" | grep -q "Service providers"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to get world name from running Gazebo
+get_world_name() {
+    gz topic -l 2>/dev/null | grep -m 1 -e "^/world/.*/clock" | sed 's/\/world\///g; s/\/clock//g'
+}
+
+world_name=""
+while [ $elapsed -lt $GZ_STARTUP_TIMEOUT ]; do
+    # Try to get world name from Gazebo topics
+    if [ -z "$world_name" ]; then
+        world_name=$(get_world_name)
+    fi
+
+    # If we have a world name, check if it's fully ready
+    if [ -n "$world_name" ] && check_scene_info "$world_name"; then
+        echo "Gazebo world '${world_name}' is ready after ${elapsed}s"
+        break
+    fi
+
+    sleep 1
+    elapsed=$((elapsed + 1))
+    if [ $((elapsed % 10)) -eq 0 ]; then
+        echo "Still waiting for Gazebo... (${elapsed}s/${GZ_STARTUP_TIMEOUT}s)"
+    fi
+done
+
+if [ $elapsed -ge $GZ_STARTUP_TIMEOUT ]; then
+    echo "ERROR: Gazebo failed to start within ${GZ_STARTUP_TIMEOUT}s"
+    exit 1
+fi
+
+# Export world name for PX4 to use
+export PX4_GZ_WORLD=${world_name}
+
+# Additional delay to ensure physics is stable
+sleep 2
+
 # Adapted from https://github.com/PX4/PX4-Autopilot/blob/main/Tools/simulation/sitl_multiple_run.sh
 n=0
 while [ $n -lt $NUM_DRONES ]; do
