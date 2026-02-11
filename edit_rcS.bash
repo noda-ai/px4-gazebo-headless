@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function is_docker_vm {
-    getent hosts host.docker.internal >/dev/null 2>&1
+    getent ahostsv4 host.docker.internal >/dev/null 2>&1
     return $?
 }
 
