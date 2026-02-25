@@ -71,6 +71,7 @@ COPY simulation-worlds ${FIRMWARE_DIR}/Tools/simulation/gz/worlds/custom
 
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}
+COPY sim_speed_controller.py ${WORKSPACE_DIR}/
 COPY entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
 
