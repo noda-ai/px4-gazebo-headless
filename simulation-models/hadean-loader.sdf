@@ -1,0 +1,10 @@
+<sdf version="1.6">
+  <model name="empty_plugin_host">
+    <static>true</static>
+    <link name="link"/>
+    <plugin
+      filename="TestSystem"
+      name="test_system::TestSystem">
+    </plugin>
+  </model>
+</sdf>

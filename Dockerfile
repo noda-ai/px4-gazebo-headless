@@ -68,7 +68,8 @@ RUN cmake -DCONFIG=px4_sitl_default -B${FIRMWARE_DIR}/build -S${FIRMWARE_DIR} &&
     cmake --build ${FIRMWARE_DIR}/build
 
 COPY simulation-worlds ${FIRMWARE_DIR}/Tools/simulation/gz/worlds/custom
-
+COPY simulation-models ${FIRMWARE_DIR}/Tools/simulation/gz/models/custom
+COPY simulation-plugins ${FIRMWARE_DIR}/build/src/modules/simulation/gz_plugins
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}
 COPY entrypoint.sh /root/entrypoint.sh
