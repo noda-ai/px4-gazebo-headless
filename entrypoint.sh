@@ -2,7 +2,7 @@
 
 function show_help {
     echo ""
-    echo "Usage: ${0} [-h | -v VEHICLE | -e ENUM | -c COUNT | -w WORLD | -l LATITUDE | -o LONGITUDE] [HOST_API | HOST_QGC HOST_API]"
+    echo "Usage: ${0} [-h | -v VEHICLE | -e ENUM | -c COUNT | -w WORLD | -l LATITUDE | -o LONGITUDE | -i DIS_IP] [HOST_API | HOST_QGC HOST_API]"
     echo ""
     echo "Run a headless px4-gazebo simulation in a docker container. The"
     echo "available vehicles and worlds are the ones available in PX4"
@@ -15,6 +15,7 @@ function show_help {
     echo "  -w    Set the world (default: default)"
     echo "  -l    Set the Latitude for the vehicles (default: 50.78398504070213 (Portsmouth))"
     echo "  -o    Set the Longitude for the vehicles (default: -1.2890323096956389 (Portsmouth))"
+    echo "  -i    Set the IP address the DIS packets will be sent to (default: IP_DIS variable or Docker host ip)"
     echo ""
     echo "  <HOST_API> is the host or IP to which PX4 will send MAVLink on UDP port 14540"
     echo "  <HOST_QGC> is the host or IP to which PX4 will send MAVLink on UDP port 14550"
@@ -42,8 +43,9 @@ NUM_DRONES=${NUM_DRONES:-1}
 world=${PX4_GZ_WORLD:-default}
 lat=${LATITUDE:-50.78398504070213}
 lon=${LONGITUDE:--1.2890323096956389}
+# IP_DIS handled in edit_rcS
 
-while getopts "h?v:e:c:w:l:o:" opt; do
+while getopts "h?v:e:c:w:l:o:i:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -60,6 +62,8 @@ while getopts "h?v:e:c:w:l:o:" opt; do
     l)  lat=$OPTARG
         ;;
     o)  lon=$OPTARG
+        ;;
+    i)  IP_DIS=$OPTARG
         ;;
     esac
 done

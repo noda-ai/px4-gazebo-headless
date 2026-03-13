@@ -113,7 +113,7 @@ else
     echo "Host IP: ${HOST}"
     QGC_PARAM=${QGC_PARAM:-"-t ${HOST}"}
     API_PARAM=${API_PARAM:-"-t ${HOST}"}
-    DIS_IP=${DIS_IP:-"${HOST}"}
+    DIS_IP=${ip_dis:-"${HOST}"}
 fi
 
 
