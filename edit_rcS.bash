@@ -37,26 +37,24 @@ function get_host_ip {
 }
 
 function build_hadean_inject {
-    IFS=":" read -r HADEAN_DIS_IP HADEAN_DIS_PORT <<< "$DIS_IP"
-
     local LAT_INJECT=""
-    if [ -n "${HADEAN_DIS_IP}" ]; then
+    if [ -n "${DIS_IP}" ]; then
         LAT_INJECT="<lat>${lat}</lat>"
     fi
 
     local LON_INJECT=""
-    if [ -n "${HADEAN_DIS_IP}" ]; then
+    if [ -n "${DIS_IP}" ]; then
         LON_INJECT="<lon>${lon}</lon>"
     fi
 
     local IP_INJECT=""
-    if [ -n "${HADEAN_DIS_IP}" ]; then
-        IP_INJECT="<ip>${HADEAN_DIS_IP}</ip>"
+    if [ -n "${DIS_IP}" ]; then
+        IP_INJECT="<ip>${DIS_IP}</ip>"
     fi
 
     local PORT_INJECT=""
-    if [ -n "${HADEAN_DIS_PORT}" ]; then
-        PORT_INJECT="<port>${HADEAN_DIS_PORT}</port>"
+    if [ -n "${DIS_PORT}" ]; then
+        PORT_INJECT="<port>${DIS_PORT}</port>"
     fi
 
 
@@ -75,7 +73,7 @@ function build_hadean_inject {
 
 OPTIND=1
 
-while getopts "a:q:l:o:i:c:n:e:" opt; do
+while getopts "a:q:l:o:i:p:c:n:e:" opt; do
     case "$opt" in
     a)  IP_API=$OPTARG # Unused Leftover
         ;;
@@ -86,6 +84,8 @@ while getopts "a:q:l:o:i:c:n:e:" opt; do
     o)  lon=$OPTARG
         ;;
     i)  ip_dis=$OPTARG
+        ;;
+    p)  port_dis=$OPTARG
         ;;
     c)  count_drones=$OPTARG
         ;;
@@ -103,9 +103,11 @@ if is_docker_vm; then
     VM_HOST=$(get_vm_host_ip)
     PX4_CLIENT_HOST=$(get_px4_client_ip)
     DIS_IP="${ip_dis:-${VM_HOST}}"
+    DIS_PORT="${port_dis:-3000}"
     echo "VM host IP: ${VM_HOST}"
     echo "PX4 client IP: ${PX4_CLIENT_HOST}"
     echo "DIS target IP: ${DIS_IP}"
+    echo "DIS target Port: ${DIS_PORT}"
     QGC_PARAM=${QGC_PARAM:-"-t ${VM_HOST}"}
     API_PARAM=${API_PARAM:-"-t ${PX4_CLIENT_HOST}"}
 else
@@ -114,6 +116,7 @@ else
     QGC_PARAM=${QGC_PARAM:-"-t ${HOST}"}
     API_PARAM=${API_PARAM:-"-t ${HOST}"}
     DIS_IP=${ip_dis:-"${HOST}"}
+    DIS_PORT=${port_dis:-3000}
 fi
 
 
@@ -123,7 +126,7 @@ HADEAN_INJECT=$(build_hadean_inject)
 
 echo "QGroundControl access from ${QGC_PARAM}"
 echo "MAVSDK access from ${API_PARAM}"
-echo "DIS target from ${DIS_IP}"
+echo "DIS target from ${DIS_IP}:${DIS_PORT}"
 
 sed -i "s/mavlink start \-x \-u \$udp_gcs_port_local -r 4000000/mavlink start -x -u \$udp_gcs_port_local -r 4000000 ${QGC_PARAM}/" ${CONFIG_FILE}
 sed -i "s/mavlink start \-x \-u \$udp_offboard_port_local -r 4000000/mavlink start -x -u \$udp_offboard_port_local -r 4000000 ${API_PARAM}/" ${CONFIG_FILE}

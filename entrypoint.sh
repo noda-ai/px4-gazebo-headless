@@ -2,7 +2,7 @@
 
 function show_help {
     echo ""
-    echo "Usage: ${0} [-h | -v VEHICLE | -e ENUM | -c COUNT | -w WORLD | -l LATITUDE | -o LONGITUDE | -i DIS_IP] [HOST_API | HOST_QGC HOST_API]"
+    echo "Usage: ${0} [-h | -v VEHICLE | -e ENUM | -c COUNT | -w WORLD | -l LATITUDE | -o LONGITUDE | -i DIS_IP | -p DIS_PORT] [HOST_API | HOST_QGC HOST_API]"
     echo ""
     echo "Run a headless px4-gazebo simulation in a docker container. The"
     echo "available vehicles and worlds are the ones available in PX4"
@@ -16,6 +16,7 @@ function show_help {
     echo "  -l    Set the Latitude for the vehicles (default: 50.78398504070213 (Portsmouth))"
     echo "  -o    Set the Longitude for the vehicles (default: -1.2890323096956389 (Portsmouth))"
     echo "  -i    Set the IP address the DIS packets will be sent to (default: IP_DIS variable or Docker host ip)"
+    echo "  -p    Set the Port the DIS packets will be set to (default: 3000)"
     echo ""
     echo "  <HOST_API> is the host or IP to which PX4 will send MAVLink on UDP port 14540"
     echo "  <HOST_QGC> is the host or IP to which PX4 will send MAVLink on UDP port 14550"
@@ -44,8 +45,9 @@ world=${PX4_GZ_WORLD:-default}
 lat=${LATITUDE:-50.78398504070213}
 lon=${LONGITUDE:--1.2890323096956389}
 # IP_DIS handled in edit_rcS
+PORT_DIS=3000
 
-while getopts "h?v:e:c:w:l:o:i:" opt; do
+while getopts "h?v:e:c:w:l:o:i:p:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -65,6 +67,8 @@ while getopts "h?v:e:c:w:l:o:i:" opt; do
         ;;
     i)  IP_DIS=$OPTARG
         ;;
+    p)  PORT_DIS=$OPTARG
+	;;
     esac
 done
 
@@ -94,7 +98,7 @@ ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
 #   or at least just embed a unique identifier
 vehicle_gz_name="${vehicle:3}"
 
-source ${WORKSPACE_DIR}/edit_rcS.bash -a "${IP_API}" -q "${IP_QGC}" -l "${lat}" -o "${lon}" -i "${IP_DIS}" -c "${NUM_DRONES}" -n "${vehicle_gz_name}" -e "${enum}" &&
+source ${WORKSPACE_DIR}/edit_rcS.bash -a "${IP_API}" -q "${IP_QGC}" -l "${lat}" -o "${lon}" -i "${IP_DIS}" -p "$PORT_DIS" -c "${NUM_DRONES}" -n "${vehicle_gz_name}" -e "${enum}" &&
 
 # Source PX4's Gazebo environment setup (sets up model/plugin paths)
 GZ_ENV_FILE="${FIRMWARE_DIR}/build/rootfs/gz_env.sh"
