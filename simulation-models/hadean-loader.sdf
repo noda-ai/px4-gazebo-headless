@@ -3,8 +3,8 @@
     <static>true</static>
     <link name="link"/>
     <plugin
-      filename="TestSystem"
-      name="test_system::TestSystem">
+      filename="HadeanDISPlugin"
+      name="hadean_dis_plugin::HadeanDISPlugin">
     </plugin>
   </model>
 </sdf>
