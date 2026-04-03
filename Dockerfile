@@ -72,6 +72,7 @@ COPY simulation-models ${FIRMWARE_DIR}/Tools/simulation/gz/models/custom
 COPY simulation-plugins ${FIRMWARE_DIR}/build/src/modules/simulation/gz_plugins
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}
+COPY sim_speed_controller.py ${WORKSPACE_DIR}/
 COPY entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
 
