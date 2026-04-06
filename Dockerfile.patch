@@ -2,6 +2,8 @@ ARG BASE_IMAGE=381491823703.dkr.ecr.us-east-1.amazonaws.com/gz-harmonic-headless
 FROM ${BASE_IMAGE}
 
 COPY simulation-worlds ${FIRMWARE_DIR}/Tools/simulation/gz/worlds/custom
+COPY simulation-models ${FIRMWARE_DIR}/Tools/simulation/gz/models/custom
+COPY simulation-plugins ${FIRMWARE_DIR}/build/src/modules/simulation/gz_plugins
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}/
 COPY sim_speed_controller.py ${WORKSPACE_DIR}/
