@@ -100,6 +100,34 @@ vehicle_gz_name="${vehicle:3}"
 
 source ${WORKSPACE_DIR}/edit_rcS.bash -a "${IP_API}" -q "${IP_QGC}" -l "${lat}" -o "${lon}" -i "${IP_DIS}" -p "$PORT_DIS" -c "${NUM_DRONES}" -n "${vehicle_gz_name}" -e "${enum}" &&
 
+# ── Simulation tolerance params ──────────────────────────────────
+# Inject param overrides directly into the PX4 SITL startup script
+# so they run before preflight checks. Appended after the FCONFIG
+# block to act as a guaranteed fallback.
+POSIX_RCS=${FIRMWARE_DIR}/build/etc/init.d-posix/rcS
+
+# Simulation tolerance — relax preflight checks for heavy sim loads
+cat >> "$POSIX_RCS" <<'SIM_PARAMS'
+
+# --- Injected by entrypoint.sh: relax preflight + disable auto-RTL ---
+param set COM_ARM_IMU_ACC 3.0
+param set EKF2_ABL_LIM 0.8
+param set COM_ARM_WO_GPS 1
+# Disable PX4 automatic RTL — battery/link-loss handled by external orchestrator
+param set COM_LOW_BAT_ACT 0
+param set NAV_DLL_ACT 0
+SIM_PARAMS
+
+# Simulated battery drain (SIM_BAT_DRAIN seconds); falls back to airframe default when unset
+if [ -n "${SIM_BAT_DRAIN}" ]; then
+    cat >> "$POSIX_RCS" <<BAT_DRAIN
+param set SIM_BAT_MIN_PCT 0
+param set SIM_BAT_DRAIN ${SIM_BAT_DRAIN}
+BAT_DRAIN
+fi
+
+echo "Injected sim tolerance params into rcS"
+
 # Source PX4's Gazebo environment setup (sets up model/plugin paths)
 GZ_ENV_FILE="${FIRMWARE_DIR}/build/rootfs/gz_env.sh"
 if [ -f "$GZ_ENV_FILE" ]; then
@@ -185,23 +213,38 @@ python3 -u ${WORKSPACE_DIR}/sim_speed_controller.py &
 # Additional delay to ensure physics is stable
 sleep 2
 
-# Adapted from https://github.com/PX4/PX4-Autopilot/blob/main/Tools/simulation/sitl_multiple_run.sh
-n=0
-while [ $n -lt $NUM_DRONES ]; do
-    working_dir="$PX4_BUILD_DIR/instance_$n"
+# ── Launch PX4 instances ─────────────────────────────────────────
+# SIM_DRONE_DELAYS: comma-separated per-drone spawn delays (seconds).
+# Example: "0,0,600,900" → drones 0,1 immediate, drone 2 at 10min, drone 3 at 15min.
+IFS=',' read -ra DRONE_DELAYS <<< "${SIM_DRONE_DELAYS:-}"
+
+launch_px4_instance() {
+    local n=$1
+    local working_dir="$PX4_BUILD_DIR/instance_$n"
     [ ! -d "$working_dir" ] && mkdir -p "$working_dir"
 
     pushd "$working_dir" &>/dev/null
     echo "starting instance $n in $(pwd)"
-    # PX4_GZ_MODEL_POSE (x, y, z, roll, pitch, yaw) should be unique for each instance to avoid collisions on initialization
+
     HEADLESS=1 PX4_SIM_MODEL=${vehicle} PX4_GZ_WORLD=${world} PX4_GZ_MODEL_POSE="$(($n + 1)),0,0,0,0,0" ${PX4_BUILD_DIR}/bin/px4 -d -i $n &
     popd &>/dev/null
+}
 
-    # Increased sleep time between subsequent instance launches
-    echo "Sleeping 10 seconds before launching next instance..."
-    sleep 10
-
-    n=$(($n + 1))
+# Launch each drone: immediate or delayed in background
+for n in $(seq 0 $(($NUM_DRONES - 1))); do
+    delay="${DRONE_DELAYS[$n]:-0}"
+    if [ "$delay" -gt 0 ] 2>/dev/null; then
+        (
+            echo "Drone $n will spawn after ${delay}s"
+            sleep "$delay"
+            echo "=== Spawning drone $n ==="
+            launch_px4_instance "$n"
+        ) &
+    else
+        launch_px4_instance "$n"
+        echo "Sleeping 10 seconds before next instance..."
+        sleep 10
+    fi
 done
 
 gz service -s /world/${world_name}/create \
@@ -209,6 +252,13 @@ gz service -s /world/${world_name}/create \
 --reptype gz.msgs.Boolean \
 --timeout 5000 \
 --req "sdf_filename: \"${PX4_GZ_MODELS}/custom/hadean-loader.sdf\""
+
+# Start respawn watchdog (monitors landed drones and restarts them)
+if [ "${SIM_RESPAWN_ENABLED:-1}" = "1" ]; then
+    export GZ_WORLD_NAME=${world_name}
+    bash ${WORKSPACE_DIR}/respawn_watchdog.sh &
+    echo "Respawn watchdog started"
+fi
 
 # Wait for all PX4 instances to finish
 wait

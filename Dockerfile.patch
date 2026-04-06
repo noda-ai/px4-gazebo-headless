@@ -7,6 +7,7 @@ COPY simulation-plugins ${FIRMWARE_DIR}/build/src/modules/simulation/gz_plugins
 
 COPY edit_rcS.bash ${WORKSPACE_DIR}/
 COPY sim_speed_controller.py ${WORKSPACE_DIR}/
+COPY respawn_watchdog.sh ${WORKSPACE_DIR}/
 COPY entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
 
