@@ -180,7 +180,7 @@ export PX4_GZ_WORLD=${world_name}
 
 # Start sim speed controller API
 export GZ_WORLD_NAME=${world_name}
-python3 ${WORKSPACE_DIR}/sim_speed_controller.py &
+python3 -u ${WORKSPACE_DIR}/sim_speed_controller.py &
 
 # Additional delay to ensure physics is stable
 sleep 2
