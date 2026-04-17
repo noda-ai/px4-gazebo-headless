@@ -2,7 +2,7 @@
 
 function show_help {
     echo ""
-    echo "Usage: ${0} [-h | -v VEHICLE | -w WORLD] [HOST_API | HOST_QGC HOST_API]"
+    echo "Usage: ${0} [-h | -v VEHICLE | -e ENUM | -c COUNT | -w WORLD | -l LATITUDE | -o LONGITUDE | -i DIS_IP | -p DIS_PORT] [HOST_API | HOST_QGC HOST_API]"
     echo ""
     echo "Run a headless px4-gazebo simulation in a docker container. The"
     echo "available vehicles and worlds are the ones available in PX4"
@@ -10,7 +10,13 @@ function show_help {
     echo ""
     echo "  -h    Show this help"
     echo "  -v    Set the vehicle (default: gz_x500)"
+    echo "  -e    Set the DIS Entity Type Enumeration (default: 1.2.0.50.1.0.0)"
+    echo "  -c    Set the vehicle count (default: 1)"
     echo "  -w    Set the world (default: default)"
+    echo "  -l    Set the Latitude for the vehicles (default: 50.78398504070213 (Portsmouth))"
+    echo "  -o    Set the Longitude for the vehicles (default: -1.2890323096956389 (Portsmouth))"
+    echo "  -i    Set the IP address the DIS packets will be sent to (default: IP_DIS variable or Docker host ip)"
+    echo "  -p    Set the Port the DIS packets will be set to (default: 3000)"
     echo ""
     echo "  <HOST_API> is the host or IP to which PX4 will send MAVLink on UDP port 14540"
     echo "  <HOST_QGC> is the host or IP to which PX4 will send MAVLink on UDP port 14550"
@@ -33,9 +39,15 @@ function get_ip {
 OPTIND=1 # Reset in case getopts has been used previously in the shell.
 
 vehicle=gz_x500
+enum=1.2.0.50.1.0.0
+NUM_DRONES=${NUM_DRONES:-1}
 world=${PX4_GZ_WORLD:-default}
+lat=${LATITUDE:-50.78398504070213}
+lon=${LONGITUDE:--1.2890323096956389}
+# IP_DIS handled in edit_rcS
+PORT_DIS=3000
 
-while getopts "h?v:w:" opt; do
+while getopts "h?v:e:c:w:l:o:i:p:" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -43,12 +55,25 @@ while getopts "h?v:w:" opt; do
         ;;
     v)  vehicle=$OPTARG
         ;;
+    e)  enum=$OPTARG
+        ;;
+    c)  NUM_DRONES=$OPTARG
+        ;;
     w)  world=$OPTARG
         ;;
+    l)  lat=$OPTARG
+        ;;
+    o)  lon=$OPTARG
+        ;;
+    i)  IP_DIS=$OPTARG
+        ;;
+    p)  PORT_DIS=$OPTARG
+	;;
     esac
 done
 
 shift $((OPTIND-1))
+
 
 # Rely on environment variables for offboard API (MAVSDK) IP address, QGroundControl IP address, and PX4 instance ID
 if [ -n "${IP_API}" ]; then
@@ -59,15 +84,21 @@ if [ -n "${IP_QGC}" ]; then
     IP_QGC=$(get_ip "${IP_QGC}")
 fi
 
-# Number of drones to spawn in the simulator
-NUM_DRONES=${NUM_DRONES:-1}
+if [ -n "${IP_DIS}" ]; then
+    IP_DIS=$(get_ip "${IP_DIS}")
+fi
 
 # Start Xvfb in background
 Xvfb :99 -screen 0 1600x1200x24+32 &
 ${SITL_RTSP_PROXY}/build/sitl_rtsp_proxy &
 
 
-source ${WORKSPACE_DIR}/edit_rcS.bash ${IP_API} ${IP_QGC} &&
+# Trims "gz_" out of $vehicle. TODO: verify this is consistent behavior in px4
+# TODO: a cleaner option would be to embed per-vehicle logic in vehicle models themselves
+#   or at least just embed a unique identifier
+vehicle_gz_name="${vehicle:3}"
+
+source ${WORKSPACE_DIR}/edit_rcS.bash -a "${IP_API}" -q "${IP_QGC}" -l "${lat}" -o "${lon}" -i "${IP_DIS}" -p "$PORT_DIS" -c "${NUM_DRONES}" -n "${vehicle_gz_name}" -e "${enum}" &&
 
 # Source PX4's Gazebo environment setup (sets up model/plugin paths)
 GZ_ENV_FILE="${FIRMWARE_DIR}/build/rootfs/gz_env.sh"
@@ -82,6 +113,10 @@ else
     export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$PX4_GZ_MODELS:$PX4_GZ_WORLDS
     export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:$PX4_GZ_PLUGINS
 fi
+
+export PX4_HOME_LAT=${lat}
+export PX4_HOME_LON=${lon}
+export PX4_HOME_ALT=0
 
 # Resolve world file path
 world_file="${PX4_GZ_WORLDS}/${world}.sdf"
@@ -143,6 +178,10 @@ fi
 # Export world name for PX4 to use
 export PX4_GZ_WORLD=${world_name}
 
+# Start sim speed controller API
+export GZ_WORLD_NAME=${world_name}
+python3 -u ${WORKSPACE_DIR}/sim_speed_controller.py &
+
 # Additional delay to ensure physics is stable
 sleep 2
 
@@ -164,6 +203,12 @@ while [ $n -lt $NUM_DRONES ]; do
 
     n=$(($n + 1))
 done
+
+gz service -s /world/${world_name}/create \
+--reqtype gz.msgs.EntityFactory \
+--reptype gz.msgs.Boolean \
+--timeout 5000 \
+--req "sdf_filename: \"${PX4_GZ_MODELS}/custom/hadean-loader.sdf\""
 
 # Wait for all PX4 instances to finish
 wait

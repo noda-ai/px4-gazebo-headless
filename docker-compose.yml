@@ -6,12 +6,17 @@ services:
     environment:
       - DISPLAY=:99
       - NUM_DRONES=1
+      - LATITUDE=50.78398504070213
+      - LONGITUDE=-1.2890323096956389
       - PX4_GZ_WORLD=custom/port-hueneme
       - IP_API=host.docker.internal  # Mac-friendly IP resolution
       - IP_QGC=host.docker.internal
+      - IP_DIS=host.docker.internal
       - PX4_SIM_SPEED_FACTOR=0.9
       - LOCKSTEP=1 # Ensure lockstep is enabled (should be by default)
       - PX4_ESTIMATOR=ekf2 # Use EKF2 which is more robust to slight timing issues
+    ports:
+      - "8080:8080"
     network_mode: bridge
     cap_add:
       - SYS_PTRACE
