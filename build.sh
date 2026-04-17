@@ -25,6 +25,7 @@ BASE_IMAGE="${ECR_REPO}:gz-harmonic.px4-02103b9100.7fedb94"
 REPO_COMMIT=$(git rev-parse --short HEAD)
 TAG=""
 PUSH=false
+NO_CACHE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -32,6 +33,7 @@ while [[ $# -gt 0 ]]; do
         --push) PUSH=true; shift ;;
         --tag) TAG="$2"; shift 2 ;;
         --base) BASE_IMAGE="$2"; shift 2 ;;
+        --no-cache) NO_CACHE=true; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -54,12 +56,10 @@ if ! aws sts get-caller-identity &>/dev/null; then
     exit 1
 fi
 
-# Ensure buildx builder exists
+# Ensure buildx builder exists (used via --builder flag, not globally selected)
 if ! docker buildx inspect "${BUILDER_NAME}" &>/dev/null; then
     echo "Creating buildx builder '${BUILDER_NAME}'..."
-    docker buildx create --name "${BUILDER_NAME}" --use
-else
-    docker buildx use "${BUILDER_NAME}"
+    docker buildx create --name "${BUILDER_NAME}"
 fi
 
 echo ""
@@ -67,11 +67,16 @@ echo "Starting multi-arch build..."
 echo ""
 
 BUILD_ARGS=(
+    --builder "${BUILDER_NAME}"
     --platform "${PLATFORMS}"
     --tag "${FULL_IMAGE}"
     --build-arg "BASE_IMAGE=${BASE_IMAGE}"
     -f Dockerfile.patch
 )
+
+if [ "$NO_CACHE" = true ]; then
+    BUILD_ARGS+=(--no-cache)
+fi
 
 if [ "$PUSH" = true ]; then
     BUILD_ARGS+=(--push)
