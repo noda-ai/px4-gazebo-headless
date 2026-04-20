@@ -49,12 +49,17 @@ echo "Platforms:  ${PLATFORMS}"
 echo "Push:       ${PUSH}"
 echo ""
 
-# Verify AWS credentials are valid (ECR auth is handled by the ecr-login credential helper)
+# Verify AWS credentials, triggering SSO login if expired
 echo "Checking AWS credentials..."
 if ! aws sts get-caller-identity &>/dev/null; then
-    echo "ERROR: AWS credentials are expired or missing. Run 'aws sso login' and try again."
-    exit 1
+    echo "AWS credentials expired or missing, running 'aws sso login'..."
+    aws sso login
 fi
+
+# Authenticate Docker to ECR (buildx doesn't always invoke the ecr-login helper reliably)
+echo "Authenticating Docker to ECR..."
+aws ecr get-login-password --region us-east-1 \
+    | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
 
 # Ensure buildx builder exists (used via --builder flag, not globally selected)
 if ! docker buildx inspect "${BUILDER_NAME}" &>/dev/null; then
