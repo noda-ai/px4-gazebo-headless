@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 WORLD = os.environ.get("GZ_WORLD_NAME", "default")
 MIN_SPEED = 0.1
 MAX_SPEED = 10.0
-PORT = 8080
+PORT = 9500
 
 current_speed = float(os.environ.get("PX4_SIM_SPEED_FACTOR", "1.0"))
 
