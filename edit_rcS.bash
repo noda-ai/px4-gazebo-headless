@@ -119,15 +119,22 @@ else
     DIS_PORT=${port_dis:-3000}
 fi
 
-
+RCS_CONFIG_FILE=${FIRMWARE_DIR}/build/etc/init.d-posix/rcS
 CONFIG_FILE=${FIRMWARE_DIR}/build/etc/init.d-posix/px4-rc.mavlink
 HADEAN_LOADER=${FIRMWARE_DIR}/Tools/simulation/gz/models/custom/hadean-loader.sdf
 HADEAN_INJECT=$(build_hadean_inject)
+
+# TODO parameterize
+MODEL_FILE=${FIRMWARE_DIR}/Tools/simulation/gz/models/x500/model.sdf
+BASE_MODEL_FILE=${FIRMWARE_DIR}/Tools/simulation/gz/models/x500_base/model.sdf
 
 echo "QGroundControl access from ${QGC_PARAM}"
 echo "MAVSDK access from ${API_PARAM}"
 echo "DIS target from ${DIS_IP}:${DIS_PORT}"
 
+printf 'param set COM_DL_LOSS_T 160\nparam set COM_OBC_LOSS_T 80\nparam set COM_OF_LOSS_T 16\nparam set COM_RC_LOSS_T 16' >> "${RCS_CONFIG_FILE}"
 sed -i "s/mavlink start \-x \-u \$udp_gcs_port_local -r 4000000/mavlink start -x -u \$udp_gcs_port_local -r 4000000 ${QGC_PARAM}/" ${CONFIG_FILE}
 sed -i "s/mavlink start \-x \-u \$udp_offboard_port_local -r 4000000/mavlink start -x -u \$udp_offboard_port_local -r 4000000 ${API_PARAM}/" ${CONFIG_FILE}
 sed -i "s|</plugin>|${HADEAN_INJECT}</plugin>|" ${HADEAN_LOADER}
+sed -i "s|<rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>|<rotorVelocitySlowdownSim>100</rotorVelocitySlowdownSim>|" ${MODEL_FILE}
+sed -i "s|<update_rate>250</update_rate>|<update_rate>250</update_rate>|" ${BASE_MODEL_FILE}
