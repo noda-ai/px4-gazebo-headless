@@ -8,8 +8,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 WORLD = os.environ.get("GZ_WORLD_NAME", "default")
 MIN_SPEED = 0.1
-MAX_SPEED = 10.0
+MAX_SPEED = 16.0
+MAX_STEP_SIZE = 0.008
 PORT = 8080
+PHYSICS_MSG_DEFAULTS = "gravity {z: -9.8}" # Excluding will reset to 0. Gravity is the only field that appears to be set aside from rtf and step size. https://github.com/gazebosim/gz-sim/blob/gz-sim8/src/SimulationRunner.cc#L376
 
 current_speed = float(os.environ.get("PX4_SIM_SPEED_FACTOR", "1.0"))
 
@@ -22,7 +24,7 @@ def set_gz_speed(factor):
             "-s", f"/world/{WORLD}/set_physics",
             "--reqtype", "gz.msgs.Physics",
             "--reptype", "gz.msgs.Boolean",
-            "--req", f"real_time_factor: {factor}",
+            "--req", f"{PHYSICS_MSG_DEFAULTS}, real_time_factor: {factor}, max_step_size: {MAX_STEP_SIZE}",
             "--timeout", "5000",
         ],
         capture_output=True,
@@ -96,6 +98,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    print("[sim_speed_controller] Starting...")
     server = HTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[sim_speed_controller] Serving on port {PORT}, world={WORLD}, initial_speed={current_speed}")
     server.serve_forever()
